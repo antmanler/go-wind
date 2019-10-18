@@ -1,0 +1,45 @@
+/.dapper
+/bin
+/build*
+/dist*
+/packages*
+/.trash-cache
+
+*.swp
+.env
+*.pyc
+.DS_Store
+.cache
+
+# Folders
+_obj
+_test
+_output
+.kube
+/.vscode/*
+!/.vscode/settings.json
+.idea
+
+# Architecture specific extensions/prefixes
+*.[568vq]
+[568vq].out
+
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+
+_testmain.go
+
+*.exe
+*.test
+*.prof
+
+# vendor
+vendor/
+
+/values.*
+.generated
+/tmp
+*.7z

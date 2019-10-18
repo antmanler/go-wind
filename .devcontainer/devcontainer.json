@@ -1,0 +1,35 @@
+{
+    "name": "go-wind",
+    "dockerFile": "Dockerfile",
+    "extensions": [
+        "ms-vscode.cpptools",
+        "ms-vscode.go",
+        // extras
+        "twxs.cmake",
+        "jchannon.csharpextensions",
+        "zxh404.vscode-proto3",
+        "compulim.vscode-clock"
+    ],
+    "runArgs": [
+        "--cap-add=SYS_PTRACE",
+        "-e",
+        "HTTP_PROXY=${env:http_proxy_docker_internal}", // http://host.docker.internal:8888
+        "-e",
+        "HTTPS_PROXY=${env:http_proxy_docker_internal}", // http://host.docker.internal:8888
+        "-e",
+        "GOPROXY=https://goproxy.io",
+        "-e",
+        "GONOPROXY=github.com/antmanler,github.com/restis,restis.dev,refunc.dev",
+        "-e",
+        "GONOSUMDB=github.com/antmanler,github.com/restis,restis.dev,refunc.dev",
+        "-e",
+        "NATS_URL=nats://host.docker.internal:4222",
+        "--security-opt",
+        "seccomp=unconfined",
+        "-v",
+        "go-ext-cache:/root/.vscode-server"
+    ],
+    "appPort": [
+        35222
+    ]
+}

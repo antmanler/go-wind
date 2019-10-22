@@ -497,6 +497,7 @@ func parseRawData(raw *rawData) ([]*WindData, error) {
 
 	w := len(fields)
 	out := make([]*WindData, len(times)*len(codes))
+	ctime := time.Now()
 	for i, tval := range times {
 		tm := msTsToTime(tval.(float64))
 		for j, code := range codes {
@@ -505,7 +506,7 @@ func parseRawData(raw *rawData) ([]*WindData, error) {
 				WindCode:   code,
 				Fields:     fields[:],
 				Values:     data[0:w],
-				CreatedAt:  time.Now(),
+				CreatedAt:  ctime,
 			}
 			data = data[w:]
 		}

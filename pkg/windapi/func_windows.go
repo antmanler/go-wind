@@ -9,7 +9,6 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
-	"k8s.io/klog"
 	ole "restis.dev/go-ole"
 )
 
@@ -33,7 +32,7 @@ func newEventReceiver(C chan<- event) *eventReceiver {
 	evt.vtbl = new(evtVtbl)
 	evt.vtbl.pAddRef = syscall.NewCallback(evtAddRef)
 	evt.vtbl.pRelease = syscall.NewCallback(evtRelease)
-	evt.vtbl.pQueryInterface = syscall.NewCallback(func(this *ole.IUnknown, iid *ole.GUID, punk **ole.IUnknown) uintptr {
+	evt.vtbl.pQueryInterface = syscall.NewCallback(func(this *ole.IUnknown, iid *ole.GUID, punk **ole.IUnknown /*output*/) uintptr {
 		*punk = nil
 		if ole.IsEqualGUID(iid, ole.IID_IUnknown) || ole.IsEqualGUID(iid, ole.IID_IDispatch) {
 			evtAddRef(this)
@@ -58,11 +57,6 @@ func newEventReceiver(C chan<- event) *eventReceiver {
 		return ole.E_NOTIMPL
 	})
 	evt.vtbl.pGetIDsOfNames = syscall.NewCallback(func(this *ole.IUnknown, iid *ole.GUID, wnames uintptr /*[]*uint16*/, namelen int, lcid int, pdisp uintptr /*int32*/) uintptr {
-		names := make([]string, namelen)
-		for i := 0; i < len(names); i++ {
-			names[i] = ole.LpOleStrToString((*uint16)(unsafe.Pointer(wnames + uintptr(i))))
-		}
-		klog.Info(names)
 		return uintptr(ole.S_OK)
 	})
 	evt.vtbl.pInvoke = syscall.NewCallback(func(
@@ -88,6 +82,7 @@ func newEventReceiver(C chan<- event) *eventReceiver {
 
 			length := int(param.cArgs)
 			args := make([]ole.VARIANT, 0, 0)
+
 			// copy slice haeder
 			h := *(*reflect.SliceHeader)((unsafe.Pointer)(&args))
 			h.Data, h.Len, h.Cap = param.rgvarg, length, length
@@ -97,9 +92,9 @@ func newEventReceiver(C chan<- event) *eventReceiver {
 			reqid := int64(args[1].Val)
 			ecode := int32(args[0].Val)
 
-			pthis := (*eventReceiver)(unsafe.Pointer(this))
+			self := (*eventReceiver)(unsafe.Pointer(this))
 
-			pthis.C <- event{
+			self.C <- event{
 				State:     state,
 				RequestID: reqid,
 				ErrCode:   ecode,
@@ -112,7 +107,7 @@ func newEventReceiver(C chan<- event) *eventReceiver {
 }
 
 func adviseEventReceiver(source *ole.IDispatch, r *eventReceiver) (err error) {
-	cp, err := findConnectionPoint(source)
+	cp, err := findWindConnectionPoint(source)
 	if err != nil {
 		return err
 	}
@@ -126,7 +121,7 @@ func adviseEventReceiver(source *ole.IDispatch, r *eventReceiver) (err error) {
 }
 
 func unadviseEventReceiver(source *ole.IDispatch, r *eventReceiver) error {
-	cp, err := findConnectionPoint(source)
+	cp, err := findWindConnectionPoint(source)
 	if err != nil {
 		return err
 	}
@@ -136,7 +131,7 @@ func unadviseEventReceiver(source *ole.IDispatch, r *eventReceiver) error {
 
 }
 
-func findConnectionPoint(wind *ole.IDispatch) (*ole.IConnectionPoint, error) {
+func findWindConnectionPoint(wind *ole.IDispatch) (*ole.IConnectionPoint, error) {
 	unknown, err := wind.QueryInterface(ole.IID_IConnectionPointContainer)
 	if err != nil {
 		return nil, err
